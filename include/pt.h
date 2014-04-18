@@ -50,7 +50,9 @@
 #define __PT_H__
 
 #include "lc.h"
-
+/*
+ * @brief 协程的上下文结构体, 2个byte, 实际上它是用来保存上一次出让点的程序计数器, 协程是stackless
+ */
 struct pt {
   lc_t lc;
 };
@@ -77,6 +79,7 @@ struct pt {
  *
  * \hideinitializer
  */
+/* 初始化一个协程, 也即初始化状态变量 */
 #define PT_INIT(pt)   LC_INIT((pt)->lc)
 
 /** @} */
@@ -97,6 +100,7 @@ struct pt {
  *
  * \hideinitializer
  */
+/* 声明一个函数, 返回值为 char即退出码, 表示函数体内使用了 proto thread, (个人觉得有些多此一举) */
 #define PT_THREAD(name_args) char name_args
 
 /**
@@ -112,6 +116,7 @@ struct pt {
  *
  * \hideinitializer
  */
+/* 协程入口点, PT_YIELD_FLAG=0表示出让, =1表示不出让, 放在 switch 语句前面, 下次调用的时候可以跳转到上次出让点继续执行 */
 #define PT_BEGIN(pt) { char PT_YIELD_FLAG = 1; LC_RESUME((pt)->lc)
 
 /**
@@ -124,6 +129,7 @@ struct pt {
  *
  * \hideinitializer
  */
+/* 协程退出点, 至此一个协程算是终止了, 清空所有上下文和标志 */
 #define PT_END(pt) LC_END((pt)->lc); PT_YIELD_FLAG = 0; \
                    PT_INIT(pt); return PT_ENDED; }
 
@@ -145,6 +151,7 @@ struct pt {
  *
  * \hideinitializer
  */
+/* 协程阻塞点(blocking), 本质上等同于 PT_YIELD_UNTIL, 只不过退出码是 PT_WAITING, 用来模拟信号量同步 */
 #define PT_WAIT_UNTIL(pt, condition)	        \
   do {						\
     LC_SET((pt)->lc);				\
@@ -164,6 +171,7 @@ struct pt {
  *
  * \hideinitializer
  */
+/* 同 PT_WAIT_UNTIL条件反转 */
 #define PT_WAIT_WHILE(pt, cond)  PT_WAIT_UNTIL((pt), !(cond))
 
 /** @} */
@@ -189,6 +197,7 @@ struct pt {
  *
  * \hideinitializer
  */
+/* 这用于非对称协程, 调用者是主协程, pt是和子协程 thread(可以是多个)关联的上下文句柄, 主协程阻塞自己调度子协程, 直到所有子协程终止 */
 #define PT_WAIT_THREAD(pt, thread) PT_WAIT_WHILE((pt), PT_SCHEDULE(thread))
 
 /**
@@ -203,6 +212,7 @@ struct pt {
  *
  * \hideinitializer
  */
+/* 用于协程嵌套调度, child是子协程的上下文句柄 */
 #define PT_SPAWN(pt, child, thread)		\
   do {						\
     PT_INIT((child));				\
@@ -268,6 +278,7 @@ struct pt {
  *
  * \hideinitializer
  */
+/* 协程调度, 调用协程f并检查它的退出码, 直到协程终止返回 0, 否则返回 1. */
 #define PT_SCHEDULE(f) ((f) < PT_EXITED)
 
 /** @} */
@@ -287,6 +298,7 @@ struct pt {
  *
  * \hideinitializer
  */
+/* 协程出让点, 如果此时协程状态变量 lc已经变为 __LINE__跳转过来的, 那么 PT_YIELD_FLAG = 1, 表示从出让点继续执行. */
 #define PT_YIELD(pt)				\
   do {						\
     PT_YIELD_FLAG = 0;				\
@@ -307,6 +319,7 @@ struct pt {
  *
  * \hideinitializer
  */
+/* 附加出让条件 */
 #define PT_YIELD_UNTIL(pt, cond)		\
   do {						\
     PT_YIELD_FLAG = 0;				\

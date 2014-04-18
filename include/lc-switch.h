@@ -62,7 +62,8 @@
 
 /** \hideinitializer */
 typedef unsigned short lc_t;
-
+// 在ANSI C下, 协程的"原语", 就是传统的switch-case语句.
+// 这种原语有个难以察觉的缺陷: 就是你无法在 LC_RESUME和 LC_END(或者包含它们的组件)之间的代码中使用 switch-case语句, 因为这会引起外围的 switch跳转错误!
 #define LC_INIT(s) s = 0;
 
 #define LC_RESUME(s) switch(s) { case 0:

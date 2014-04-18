@@ -61,6 +61,8 @@
 /** \hideinitializer */
 typedef void * lc_t;
 
+// GNUC C的调度"原语", 解决switch-case的原语之间不能插入switch-case语句的缺陷.
+// GNU C下有一种语法糖叫标签指针, 就是在一个 label前面加 &&(不是地址的地址, 是 GNU自定义的符号), 可以用 void指针类型保存, 然后 goto跳转
 #define LC_INIT(s) s = NULL
 
 #define LC_RESUME(s)				\
